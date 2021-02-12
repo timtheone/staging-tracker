@@ -15,4 +15,6 @@ export default {
     user: process.env.TARGET_SERVER_USER || '',
     pass: process.env.TARGET_SERVER_PASSWORD || '',
   },
+  authSshKeyPath: process.env.AUTH_SSH_KEY || '',
+  sshKeyPassPhrase: process.env.SSH_PASSPHRASE || '',
 };
