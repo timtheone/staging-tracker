@@ -4,7 +4,7 @@ interface CommandInterface {
   connectionService: ConnectionService;
 }
 
-export default class CommandService implements CommandInterface {
+export default class GitCommandService implements CommandInterface {
   connectionService: ConnectionService;
   constructor(connectionService: ConnectionService) {
     this.connectionService = connectionService;

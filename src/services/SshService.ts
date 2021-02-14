@@ -1,11 +1,13 @@
-const { exec, spawn } = require('child_process');
+const { exec } = require('child_process');
+import fs from 'fs';
 import { NodeSSH } from 'node-ssh';
 import config from '../config';
 
 interface ConnectionServiceInterface {
   host: string;
   username: string;
-  keyPathOrPassword: string;
+  password: string;
+  keyPath: string;
   keyPassphrase: string;
 
   connect(withKey: boolean): void;
@@ -28,17 +30,16 @@ function passPhraseRequired(): boolean {
 export default class ConnectionService implements ConnectionServiceInterface {
   host: string;
   username: string;
-  keyPathOrPassword: string;
+  password: string;
+  keyPath: string;
   keyPassphrase: string;
   private _ssh: NodeSSH;
 
   constructor() {
     this.host = config.targetServer.host;
     this.username = config.targetServer.user;
-    this.keyPathOrPassword =
-      config.authSshKeyPath.length > 1
-        ? config.authSshKeyPath
-        : config.targetServer.pass;
+    this.password = config.targetServer.pass;
+    this.keyPath = config.authSshKeyPath;
     this.keyPassphrase = config.sshKeyPassPhrase;
     this._ssh = new NodeSSH();
   }
@@ -48,10 +49,10 @@ export default class ConnectionService implements ConnectionServiceInterface {
       host: this.host,
       username: this.username,
     };
-    if (config.authSshKeyPath.length > 1) {
+    if (this.keyPath.length > 1) {
       connectionConfig = {
         ...connectionConfig,
-        ...{ privateKey: this.keyPathOrPassword },
+        ...{ privateKey: fs.readFileSync(this.keyPath, 'utf-8') },
       };
       if (passPhraseRequired()) {
         connectionConfig = {
@@ -62,10 +63,9 @@ export default class ConnectionService implements ConnectionServiceInterface {
     } else {
       connectionConfig = {
         ...connectionConfig,
-        ...{ password: this.keyPathOrPassword },
+        ...{ password: this.password },
       };
     }
-
     return this._ssh.connect(connectionConfig);
   }
 

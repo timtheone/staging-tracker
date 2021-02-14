@@ -1,4 +1,4 @@
 import ConnectionService from './SshService';
-import CommandService from './CommandService';
+import GitCommandService from './GitCommandService';
 
-export { ConnectionService, CommandService };
+export { ConnectionService, GitCommandService };

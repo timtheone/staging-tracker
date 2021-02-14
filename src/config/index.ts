@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+const env = process.env.NODE_ENV || 'development';
 
 const envFound = dotenv.config();
 
@@ -9,6 +9,7 @@ if (envFound.error) {
 }
 
 export default {
+  env,
   port: parseInt(process.env.APP_PORT || '3000', 10),
   targetServer: {
     host: process.env.TARGET_SERVER_HOST || '',
@@ -17,4 +18,5 @@ export default {
   },
   authSshKeyPath: process.env.AUTH_SSH_KEY || '',
   sshKeyPassPhrase: process.env.SSH_PASSPHRASE || '',
+  corsOrigin: process.env.CORS_ORIGIN || '',
 };
