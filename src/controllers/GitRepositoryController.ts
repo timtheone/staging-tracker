@@ -1,6 +1,5 @@
 import { GitCommandService, ConnectionService } from '../services';
 import GitRepositoryDTO from '../DTOs/GitRepositoryDTO';
-import projectsData from '../mock/data';
 
 interface ApiControllerInterface {
   sshCommandService: GitCommandService;
@@ -10,15 +9,13 @@ interface ApiControllerInterface {
 
 export default class GitRepositoryController implements ApiControllerInterface {
   sshCommandService: GitCommandService = new GitCommandService(
-    new ConnectionService()
+    new ConnectionService('Local Ubuntu Server')
   );
 
   async getBranchName(projectName: string) {
-    // TODO
-    // Refactor to use database entry.
-    const projectPath = projectsData.projects[0].absoluteProjectPath;
+    console.log(projectName);
     const branchName = await this.sshCommandService.getCurrentBranchName(
-      projectPath
+      projectName
     );
 
     const data: GitRepositoryDTO = {

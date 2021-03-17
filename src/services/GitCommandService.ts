@@ -1,4 +1,5 @@
 import ConnectionService from './SshService';
+import { getGitRepositoryByName } from '../repositories/GitRepoRepository';
 
 interface CommandInterface {
   connectionService: ConnectionService;
@@ -10,9 +11,14 @@ export default class GitCommandService implements CommandInterface {
     this.connectionService = connectionService;
   }
 
-  getCurrentBranchName(projectPath: string) {
+  async getCurrentBranchName(projectName: string) {
+    const project = await getGitRepositoryByName(projectName);
+
+    // TODO
+    // Erro handling for fetch branch names.
+
     return this.connectionService.execCommand(
-      `cd ${projectPath} && git branch --show-current`,
+      `cd ${project.path} && git branch --show-current`,
       true
     );
   }

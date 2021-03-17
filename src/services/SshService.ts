@@ -2,17 +2,7 @@ const { exec } = require('child_process');
 import fs from 'fs';
 import { NodeSSH } from 'node-ssh';
 import config from '../config';
-
-interface ConnectionServiceInterface {
-  host: string;
-  username: string;
-  password: string;
-  keyPath: string;
-  keyPassphrase: string;
-
-  connect(withKey: boolean): void;
-  execCommand(command: string): Promise<void>;
-}
+import { getServerByName } from '../repositories/ServerRepository';
 
 function passPhraseRequired(): boolean {
   return exec(
@@ -27,58 +17,62 @@ function passPhraseRequired(): boolean {
   );
 }
 
-export default class ConnectionService implements ConnectionServiceInterface {
-  host: string;
-  username: string;
-  password: string;
-  keyPath: string;
-  keyPassphrase: string;
+export default class ConnectionService {
+  serverName: string;
   private _ssh: NodeSSH;
 
-  constructor() {
-    this.host = config.targetServer.host;
-    this.username = config.targetServer.user;
-    this.password = config.targetServer.pass;
-    this.keyPath = config.authSshKeyPath;
-    this.keyPassphrase = config.sshKeyPassPhrase;
+  constructor(serverName: string) {
+    this.serverName = serverName;
     this._ssh = new NodeSSH();
   }
 
-  connect() {
-    let connectionConfig = {
-      host: this.host,
-      username: this.username,
-    };
-    if (this.keyPath.length > 1) {
-      connectionConfig = {
-        ...connectionConfig,
-        ...{ privateKey: fs.readFileSync(this.keyPath, 'utf-8') },
+  async getServerCreds(serverName: string) {
+    return await getServerByName(serverName);
+  }
+
+  async connect() {
+    const server = await this.getServerCreds(this.serverName);
+
+    if (server) {
+      let connectionConfig = {
+        host: server.host,
+        username: server.username,
       };
-      if (passPhraseRequired()) {
+      if (server.sshAuthKey && server.sshAuthKey.length > 1) {
         connectionConfig = {
           ...connectionConfig,
-          ...{ passphrase: this.keyPassphrase },
+          ...{
+            privateKey: fs.readFileSync(server.sshAuthKey, 'utf-8'),
+          },
+        };
+        if (passPhraseRequired()) {
+          connectionConfig = {
+            ...connectionConfig,
+            ...{ passphrase: server.sshKeyPassphrase },
+          };
+        }
+      } else {
+        connectionConfig = {
+          ...connectionConfig,
+          ...{ password: server.password },
         };
       }
-    } else {
-      connectionConfig = {
-        ...connectionConfig,
-        ...{ password: this.password },
-      };
+      return this._ssh.connect(connectionConfig);
     }
-    return this._ssh.connect(connectionConfig);
   }
 
   async execCommand(command: string, returnOutput = false) {
     let connection = await this.connect();
     const ssh = this._ssh;
 
-    return connection.execCommand(command).then(function (result: any) {
-      if (returnOutput) {
-        const data = result.stdout;
-        ssh.dispose();
-        return data;
-      }
-    });
+    if (connection) {
+      return connection.execCommand(command).then(function (result: any) {
+        if (returnOutput) {
+          const data = result.stdout;
+          ssh.dispose();
+          return data;
+        }
+      });
+    }
   }
 }
